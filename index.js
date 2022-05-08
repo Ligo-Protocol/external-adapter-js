@@ -1,4 +1,5 @@
 const { Requester, Validator } = require('@chainlink/external-adapter')
+require('dotenv').config()
 
 // Define custom error scenarios for the API.
 // Return true for the adapter to retry.
@@ -12,8 +13,8 @@ const customError = (data) => {
 // with a Boolean value indicating whether or not they
 // should be required.
 const customParams = {
-  base: ['base', 'from', 'coin'],
-  quote: ['quote', 'to', 'market'],
+  vehicleId: ['vehicleId'],
+  encToken: ['encToken'],
   endpoint: false
 }
 
@@ -21,14 +22,20 @@ const createRequest = (input, callback) => {
   // The Validator helps you validate the Chainlink request data
   const validator = new Validator(callback, input, customParams)
   const jobRunID = validator.validated.id
-  const endpoint = validator.validated.data.endpoint || 'price'
-  const url = `https://min-api.cryptocompare.com/data/${endpoint}`
-  const fsym = validator.validated.data.base.toUpperCase()
-  const tsyms = validator.validated.data.quote.toUpperCase()
+  // Validaating vehicleId
+  const vId = validator.validated.data.vehicleId
+  // Validaating encryptedToken
+  const eId = validator.validated.data.encToken
+
+  // Setting up the API url
+
+  const url = `https://ligo-node-4etzx.ondigitalocean.app/api/v0/chainlink/vehicles/${vId}/odometer?encryptedToken=${eId}`
+  //const fsym = validator.validated.data.base.toUpperCase()
+  //const tsyms = validator.validated.data.quote.toUpperCase()
 
   const params = {
-    fsym,
-    tsyms
+    vId,
+    eId
   }
 
   // This is where you would add method and headers
@@ -48,7 +55,7 @@ const createRequest = (input, callback) => {
       // It's common practice to store the desired value at the top-level
       // result key. This allows different adapters to be compatible with
       // one another.
-      response.data.result = Requester.validateResultNumber(response.data, [tsyms])
+      // response.data.result = Requester.validateResultNumber(response.data, [tsyms])
       callback(response.status, Requester.success(jobRunID, response))
     })
     .catch(error => {
